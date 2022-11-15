@@ -97,7 +97,31 @@ Node *join(Node *L, Node *R)
         if (rand() % 2 <= probL) { root = R; sub = L; } //right becomes root
         else {root = L; sub = R; } //left becomes root
 
-        //if node right of root is greater than first key in sub
+        //if subtree is smaller than root tree
+        if(sub->key < root->key) {
+            //combine root->left with subtree
+            Node * subHead = sub;
+            //move to largest value of subtree
+            while(sub != nullptr) {
+                sub = sub->right;
+            }
+            //add the smallest part of root to sub
+            sub = root->left;
+            root->left = subHead;
+        }
+        //if subtree is larger than root tree
+        else {
+            Node * subHead = sub;
+            //move to smallest value of subtree
+            while(sub != nullptr) {
+                sub = sub->left;
+            }
+            sub = root->right;
+            root->right = subHead;
+        }
+
+
+        /*//if node right of root is greater than first key in sub
         if(root->right != nullptr && root->right->key > sub->key) {
             //iterate to highest val in sub
             while(sub->right != nullptr) {
@@ -113,8 +137,8 @@ Node *join(Node *L, Node *R)
             }
 
             root->right = sub;
-        }
-
+        }*/
+        fix_size(root);
         return root;
     }
     //Implement Node *join(Node *L, Node *R)
@@ -128,20 +152,22 @@ Node *remove(Node *T, int k)
   
     //Implement Node *remove(Node *T, int k)
 
-    Node * temp = T;
+    //Node * temp = T;
     //find node in tree and assign it
-    Node * toRemove = find(temp, k);
+    Node * toRemove = find(T, k);
 
     toRemove = join(toRemove->left, toRemove->right);
 
-    return temp;
+    fix_size(T);
+
+    return T;
 }
 
 // Split tree T on key k into tree L (containing keys <= k) and a tree R (containing keys > k)
 void split(Node *T, int k, Node **L, Node **R)
 {
     //Implement void split(Node *T, int k, Node **L, Node **R)
-    Node * fullT = T;
+    /*Node * fullT = T;
     Node * tempL = T;
     Node * tempR = T;
 
@@ -154,30 +180,85 @@ void split(Node *T, int k, Node **L, Node **R)
     }
     else if(T->key > k) {
         //while the node is greater than key
-        while(tempL->key > k) {
+        while(tempL != nullptr && tempL->key > k) {
             //move down a node to the left
+            tempR = insert(fullT->right, k)
             tempL = tempL->left;
         }
         
-        tempL->right = nullptr;
         *L = tempL;
-        *R = join(fullT->right, tempL->right);
+        if (tempL != nullptr) {
+            tempL->right = nullptr;
+            *R = join(fullT->right, tempL->right);
+        }
+        else { *R = fullT->right; }
         
     }
     else {
-        while(tempR->key > k) {
+        while(tempR != nullptr && tempR->key < k) {
             //move down a node to the right
             tempR = tempR->right;
         }
         
-        tempR->left = nullptr;
-        if(tempR != nullptr) fix_size(tempR);
+        //
+        //if(tempR != nullptr) fix_size(tempR);
         *R = tempR;
-        tempL = join(fullT->left, tempR->left);
-        if(tempL != nullptr) fix_size(tempL);
-        *L = tempL;
-    }
+        if (tempR != nullptr) {
+            tempR->left = nullptr;
+            tempL = join(fullT->left, tempR->left);
+        }
+        //if(tempL != nullptr) fix_size(tempL);
+        else {
+            tempL->right = nullptr;
+            *L = tempL;
+        }
+    }*/
 
+    Node * tree = T;
+    Node * rhs = T->right;
+    Node * lhs = T;
+    //make lhs include head node and everything to the left
+    lhs->right = nullptr;
+
+    //if first node's key is equal to k
+    if(tree->key == k) {
+        *R = rhs;
+        *L = lhs;
+    }
+    //if k is less than the first node
+    else if(k < tree->key) {
+        while(lhs != nullptr && k < lhs->key) { 
+            //add value at node to rhs
+            rhs = insert(rhs, lhs->key);
+            //move to next smallest node
+            lhs = lhs->left;
+            //repeat until lhs->key is less than k || lhs = nullptr
+        }
+
+        if(lhs != nullptr) {
+    
+            rhs = join(lhs->right, rhs);
+            lhs->right = nullptr;
+        }
+       
+    }
+    else {
+        while(rhs != nullptr && k > rhs->key) {
+            //add value at node to lhs
+            lhs = insert(lhs, rhs->key);
+            //move to next largest node
+            rhs = rhs->right;
+            //repeat until rhs->key is greater than k || rhs = nullptr
+        }
+        if(rhs != nullptr) {
+            lhs = join(rhs->left, lhs);
+            rhs->left = nullptr;
+        }
+    }
+    fix_size(lhs);
+    fix_size(rhs);
+    *L = lhs;
+    *R = rhs;
     
 }
 
@@ -187,16 +268,45 @@ Node *insert_random(Node *T, int k)
     // If k is the Nth node inserted into T, then:
     // with probability 1/N, insert k at the root of T
     // otherwise, insert_random k recursively left or right of the root of T
-    fix_size(T);
+    
     Node * temp = T;
-    Node * fin = T;
+    Node * fin;
 
-//temp->size = 1;
+    if(temp == nullptr) {
+        temp = insert(temp, k);
+    }
+    else if (temp->key != k) {
+        
 
-    if(temp == nullptr) fin = insert(fin, k);
+        Node * L;
+        Node * R;
+
+        //generate random value
+        int r = rand() % temp->size;
+
+        //if random value = 0; insert it as that node
+        if (r == 0) {
+            //split subtree into L and R
+            split(temp, k, &L, &R);
+            //insert new base node
+            temp = new Node(k);
+            temp->left = L;
+            temp->right = R;
+        }
+        else if (k < temp->key) {
+            insert_random(temp->left, k);
+        }
+        else if (k > temp->key) {
+            insert_random(temp->right, k);
+        }
+        fix_size(temp);
+
+    }
+
+
     
-    else if (T->key != k) {
-    
+/*    //else if (T->key != k) {
+    while(temp != nullptr) {
         Node * L;
         Node * R;
 
@@ -204,10 +314,14 @@ Node *insert_random(Node *T, int k)
 
         int random = rand() % temp->size;
         
+        //insert as base node
         if (random == 0) {
-            //insert as base node
+            
+            //divide existing tree into L and R
             split(temp, k, &L, &R);
+            //insert new val into fin
             fin = (insert(fin, k));
+            //assign fin left and right to L and R
             fin->left = L;
             fin->right = R;
             fix_size(fin);
@@ -222,11 +336,11 @@ Node *insert_random(Node *T, int k)
         // increment the tree size
         //T->size++;    
 
-    }
+    }*/
 
     
 
-    return fin;
+    return temp;
 
 
     //Implement Node *insert_random(Node *T, int k)
@@ -259,7 +373,7 @@ int main(void) {
     printVector(inorder);
   
     // test select
-    for (int i=0; i<10; i++) {
+    /*for (int i=0; i<10; i++) {
         Node *result = select(T, i);
         if ((result == nullptr) || (result->key != i)) cout << "Select test failed for select(" << i << ")!\n";
     }
@@ -268,7 +382,7 @@ int main(void) {
     cout << "Elements 0..9 should be found; 10 should not be found:\n";
     for (int i=0; i<11; i++) 
       if (find(T,i)) cout << i << " found\n";
-      else cout << i << " not found\n";
+      else cout << i << " not found\n";*/
   
     // test split
     Node *L, *R;
@@ -303,7 +417,7 @@ int main(void) {
   
     // test insert_random
     cout << "Inserting 1 million elements in order; this should be very fast...\n";
-    for (int i=0; i<1000000; i++) {T = insert_random(T, i); cout << i;}
+    for (int i=0; i<1000000; i++) { T = insert_random(T, i); }
     cout << "Tree size " << T->size << "\n";
     cout << "Done\n";
     
