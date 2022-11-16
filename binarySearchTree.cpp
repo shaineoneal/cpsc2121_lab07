@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include <assert.h>
+#include <bits/stdc++.h>
 
 #include "binarySearchTree.h"
 
@@ -97,26 +98,26 @@ Node *join(Node *L, Node *R)
         if (rand() % 2 <= probL) { root = R; sub = L; } //right becomes root
         else {root = L; sub = R; } //left becomes root
 
-        //if subtree is smaller than root tree
+        //if subtree key is smaller than root tree key
         if(sub->key < root->key) {
             //combine root->left with subtree
             Node * subHead = sub;
             //move to largest value of subtree
-            while(sub != nullptr) {
+            while(sub->right != nullptr) {
                 sub = sub->right;
             }
             //add the smallest part of root to sub
-            sub = root->left;
+            sub->right = root->left;
             root->left = subHead;
         }
-        //if subtree is larger than root tree
+        //if subtree key is larger than root tree key
         else {
             Node * subHead = sub;
             //move to smallest value of subtree
-            while(sub != nullptr) {
+            while(sub->left != nullptr) {
                 sub = sub->left;
             }
-            sub = root->right;
+            sub->left = root->right;
             root->right = subHead;
         }
 
@@ -152,11 +153,38 @@ Node *remove(Node *T, int k)
   
     //Implement Node *remove(Node *T, int k)
 
-    //Node * temp = T;
-    //find node in tree and assign it
-    Node * toRemove = find(T, k);
+    //if T is empty
+    if(T == nullptr) return T;
 
-    toRemove = join(toRemove->left, toRemove->right);
+    if(k < T->key) T->left = remove(T->left, k);
+    else if (k > T->key) T->right = remove(T->right, k);
+
+    else {
+        //node has no children
+        if (T->left==NULL && T->right==NULL)
+            return NULL;
+        
+        // node with only one child or no child
+        else if (T->left == NULL) {
+            Node * temp = T->right;
+            free(T);
+            return temp;
+        }
+        else if (T->right == NULL) {
+            Node * temp = T->left;
+            free(T);
+            return temp;
+        }
+
+        //node has 2 children
+
+        Node * temp = join(T->right, T->left);
+        T->key = temp->key;
+        T->left = temp->left;
+        T->right = temp->right;
+
+        free(temp);
+    }
 
     fix_size(T);
 
@@ -239,6 +267,7 @@ void split(Node *T, int k, Node **L, Node **R)
     
             rhs = join(lhs->right, rhs);
             lhs->right = nullptr;
+            fix_size(lhs);
         }
        
     }
@@ -253,10 +282,11 @@ void split(Node *T, int k, Node **L, Node **R)
         if(rhs != nullptr) {
             lhs = join(rhs->left, lhs);
             rhs->left = nullptr;
+            fix_size(rhs);
         }
     }
-    fix_size(lhs);
-    fix_size(rhs);
+    
+    
     *L = lhs;
     *R = rhs;
     
@@ -299,11 +329,9 @@ Node *insert_random(Node *T, int k)
         else if (k > temp->key) {
             insert_random(temp->right, k);
         }
-        fix_size(temp);
-
+        
     }
-
-
+    fix_size(temp);
     
 /*    //else if (T->key != k) {
     while(temp != nullptr) {
@@ -353,7 +381,30 @@ void printVector(vector<int> v) {
     }
 }
 
-int main(void) {
+
+void printBT(const std::string& prefix, const Node* node, bool isLeft)
+{
+    if( node != nullptr )
+    {
+        cout << prefix;
+
+        cout << (isLeft ? "├──" : "└──" );
+
+        // print the value of the node
+        cout << node->key << std::endl;
+
+        // enter the next tree level - left and right branch
+        printBT( prefix + (isLeft ? "│   " : "    "), node->left, true);
+        printBT( prefix + (isLeft ? "│   " : "    "), node->right, false);
+    }
+}
+
+void printBT(const Node* node)
+{
+    printBT("", node, false);    
+}
+
+/*int main(void) {
     vector<int> inorder;
     vector<int> A(10,0);
     
@@ -382,7 +433,7 @@ int main(void) {
     cout << "Elements 0..9 should be found; 10 should not be found:\n";
     for (int i=0; i<11; i++) 
       if (find(T,i)) cout << i << " found\n";
-      else cout << i << " not found\n";*/
+      else cout << i << " not found\n";
   
     // test split
     Node *L, *R;
@@ -404,9 +455,21 @@ int main(void) {
     cout << "Tree size " << T->size << "\n";
     
     // test remove
+      //printBT(T);
+      //  
+      //T = remove(T, 1);
+      //cout << "Contents of tree after removing 1" << ":\n";
+//
+      //printBT(T);
     for (int i=0; i<10; i++) A[i] = i;
     for (int i=9; i>0; i--) swap(A[i], A[rand()%i]);
+
+  
+
     for (int i=0; i<10; i++) {
+
+        printBT(T);
+        
       T = remove(T, A[i]);
       cout << "Contents of tree after removing " << A[i] << ":\n";
       inorder=inorder_traversal(T);
@@ -422,5 +485,5 @@ int main(void) {
     cout << "Done\n";
     
     return 0;
-} 
+} */
   
