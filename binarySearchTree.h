@@ -23,3 +23,5 @@ Node *remove(Node *T, int k);
 void split(Node *T, int k, Node **L, Node **R);
 Node *insert_random(Node *T, int k);
 void printVector(vector<int> v);
+void printBT(const std::string& prefix, const Node* node, bool isLeft);
+void printBT(const Node* node);
